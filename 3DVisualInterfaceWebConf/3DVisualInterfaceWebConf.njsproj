@@ -30,9 +30,29 @@
   </PropertyGroup>
   <ItemGroup>
     <Content Include="app.js" />
+    <None Include="Properties\PublishProfiles\3DVisualInterfaceWebConf - Web Deploy.pubxml" />
+    <Content Include="public\javascripts\face-api.min.js" />
     <Content Include="public\javascripts\main.js">
       <SubType>Code</SubType>
     </Content>
+    <Content Include="public\weights\age_gender_model-shard1" />
+    <Content Include="public\weights\age_gender_model-weights_manifest.json" />
+    <Content Include="public\weights\face_expression_model-shard1" />
+    <Content Include="public\weights\face_expression_model-weights_manifest.json" />
+    <Content Include="public\weights\face_landmark_68_model-shard1" />
+    <Content Include="public\weights\face_landmark_68_model-weights_manifest.json" />
+    <Content Include="public\weights\face_landmark_68_tiny_model-shard1" />
+    <Content Include="public\weights\face_landmark_68_tiny_model-weights_manifest.json" />
+    <Content Include="public\weights\face_recognition_model-shard1" />
+    <Content Include="public\weights\face_recognition_model-shard2" />
+    <Content Include="public\weights\face_recognition_model-weights_manifest.json" />
+    <Content Include="public\weights\mtcnn_model-shard1" />
+    <Content Include="public\weights\mtcnn_model-weights_manifest.json" />
+    <Content Include="public\weights\ssd_mobilenetv1_model-shard1" />
+    <Content Include="public\weights\ssd_mobilenetv1_model-shard2" />
+    <Content Include="public\weights\ssd_mobilenetv1_model-weights_manifest.json" />
+    <Content Include="public\weights\tiny_face_detector_model-shard1" />
+    <Content Include="public\weights\tiny_face_detector_model-weights_manifest.json" />
     <Content Include="routes\index.js" />
     <Content Include="routes\users.js" />
     <Content Include="package.json" />
@@ -43,10 +63,13 @@
     <Content Include="views\error.pug" />
   </ItemGroup>
   <ItemGroup>
+    <Folder Include="Properties\" />
+    <Folder Include="Properties\PublishProfiles\" />
     <Folder Include="public\" />
     <Folder Include="public\images\" />
     <Folder Include="public\javascripts\" />
     <Folder Include="public\stylesheets\" />
+    <Folder Include="public\weights\" />
     <Folder Include="routes\" />
     <Folder Include="views\" />
   </ItemGroup>
