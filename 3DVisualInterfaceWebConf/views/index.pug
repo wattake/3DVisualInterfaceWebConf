@@ -1,20 +1,11 @@
 extends layout
 
 block content
-  h1= title
-  p Welcome to #{title}
-  script.
-    var f1 = function() { document.getElementById('myImage').src='#{data.item1}' }
-  script.
-    var f2 = function() { document.getElementById('myImage').src='#{data.item2}' }
-  script.
-    var f3 = function() { document.getElementById('myImage').src='#{data.item3}' }
- 
+  h1="3D Visual Interface - Web Conference"
 
-  button(onclick='f1()') One!
-  button(onclick='f2()') Two!
-  button(onclick='f3()') Three!
-  button(onclick='getLocalMedia()') Four!
-  p
-  a: img(id='myImage' height='300' width='300' src='')
   video(id='localVideo' autoplay playsinline)
+  video(id='remoteVideo' autoplay playsinline)
+  p
+  button(onclick='getLocalMedia()') Join!
+  p
+  ul(id='emotion_list')
