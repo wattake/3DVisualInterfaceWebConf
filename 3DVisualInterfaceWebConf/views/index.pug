@@ -1,10 +1,11 @@
 extends layout
 
 block content
-  h1= title
-  
+  h1="3D Visual Interface - Web Conference"
+
   video(id='localVideo' autoplay playsinline)
+  video(id='remoteVideo' autoplay playsinline)
   p
-  button(onclick='getLocalMedia()') video
-  
+  button(onclick='joinWebConf()') Join!
+  p
   ul(id='emotion_list')

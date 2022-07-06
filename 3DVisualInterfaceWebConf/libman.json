@@ -1,0 +1,10 @@
+{
+  "version": "1.0",
+  "defaultProvider": "cdnjs",
+  "libraries": [
+    {
+      "library": "socket.io@4.5.1",
+      "destination": "public/socket.io"
+    }
+  ]
+}

@@ -3,7 +3,9 @@ html
   head
     title= title
     link(rel='stylesheet', href='/stylesheets/main.css')
-    script(src='/javascripts/main.js')
     script(src='/javascripts/face-api.min.js')
+    script(src='/socket.io/socket.io.js')
+    script(src='/javascripts/main.js')
+    script(src='https://webrtc.github.io/adapter/adapter-latest.js')
   body
     block content

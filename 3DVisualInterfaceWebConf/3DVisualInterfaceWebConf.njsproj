@@ -30,7 +30,8 @@
   </PropertyGroup>
   <ItemGroup>
     <Content Include="app.js" />
-    <None Include="Properties\PublishProfiles\3DVisualInterfaceWebConf - Web Deploy.pubxml" />
+    <Content Include="libman.json" />
+    <None Include="Properties\PublishProfiles\3DVisualInterfaceRTC - Web Deploy.pubxml" />
     <Content Include="public\javascripts\face-api.min.js" />
     <Content Include="public\javascripts\main.js">
       <SubType>Code</SubType>
