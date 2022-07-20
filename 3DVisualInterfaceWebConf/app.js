@@ -76,10 +76,10 @@ io.on("connection", function (socket) {
         socket.emit('log', array);
     }
 
-    socket.on('message', function (message) {
+    socket.on('message', function (room, message) {
         log('Client said: ', message);
         // for a real app, would be room-only (not broadcast)
-        socket.broadcast.emit('message', message);
+        socket.to(room).emit('message', message);
     });
 
     socket.on('create or join', function (room) {
@@ -99,7 +99,7 @@ io.on("connection", function (socket) {
         } else if (numClients[room] > 1) {
             log('Client ID ' + socket.id + ' joined room ' + room);
             socket.join(room);
-            socket.emit('joined', room, socket.id);
+            socket.emit('joined', room, socket.id, numClients[room]);
             socket.to(room).emit('ready', room);
             //socket.broadcast.emit('ready', room);
         } else { // max two clients
@@ -120,7 +120,6 @@ io.on("connection", function (socket) {
 
     socket.on('disconnect', function (reason) {
         console.log(`Peer or server disconnected. Reason: ${reason}.`);
-        numClients[socket.room]--;
         socket.broadcast.emit('bye');
     });
 

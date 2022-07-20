@@ -3,13 +3,15 @@ extends layout
 block content
   h1="3D Visual Interface - Web Conference"
 
-  video(id='localVideo' autoplay playsinline)
-  video(id='remoteVideo' autoplay playsinline)
-  p
-  button(onclick='joinWebConf()') Join
-  p
-  button(onclick='onVideo()' id='video_button' class='flat_button') Video
-  p
-  button(onclick='onMike()') Mute
-  p
+  #video_container
+    video(id='localVideo' autoplay playsinline)
+
+  .buttons
+    p
+    button(onclick='joinWebConf()' class="btn btn--orange btn--cubic btn--shadow") Join
+    p
+    button(onclick='onVideo()' class="btn btn--orange btn--cubic btn--shadow") Video
+    p
+    button(onclick='onMike()' class="btn btn--orange btn--cubic btn--shadow") Mute
+
   ul(id='emotion_list')
