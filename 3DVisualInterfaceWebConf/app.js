@@ -66,7 +66,7 @@ server.listen(app.get('port'), function () {
     debug('Express server listening on port ' + server.address().port);
 });
 
-var numClients = {};
+var numClients = new Array();
 
 io.on("connection", function (socket) {
     console.log("io connected");
@@ -76,35 +76,34 @@ io.on("connection", function (socket) {
         socket.emit('log', array);
     }
 
-    socket.on('message', function (room, message) {
+    socket.on('message', function (room, to, message) {
         log('Client said: ', message);
         // for a real app, would be room-only (not broadcast)
-        socket.to(room).emit('message', message);
+        if (to != null) {
+            socket.to(to).emit('message', message, socket.id);
+        } else { 
+            socket.to(room).emit('message', message, socket.id);
+        }
     });
 
     socket.on('create or join', function (room) {
         log('Received request to create or join room ' + room);
 
-        if (numClients[room] == undefined) {
-            numClients[room] = 1;
-        } else {
-            numClients[room]++;
-        }
-        log('Room ' + room + ' now has ' + numClients + ' client(s)');
-
-        if (numClients[room] == 1) {
+        if (numClients[room] == undefined) { // create
+            var roomArray = new Array();
+            numClients[room] = roomArray;
+            numClients[room].push(socket.id);
             socket.join(room);
             log('Client ID ' + socket.id + ' created room ' + room);
             socket.emit('created', room, socket.id);
-        } else if (numClients[room] > 1) {
+        } else { // join
             log('Client ID ' + socket.id + ' joined room ' + room);
             socket.join(room);
-            socket.emit('joined', room, socket.id, numClients[room]);
-            socket.to(room).emit('ready', room);
-            //socket.broadcast.emit('ready', room);
-        } else { // max two clients
-            socket.emit('full', room);
+            numClients[room].forEach(elm => socket.emit('joined', room, elm, numClients[room]));
+            numClients[room].push(socket.id);
+            socket.broadcast.to(room).emit('ready', room, socket.id);  // notify my socket.id except me
         }
+        
     });
 
     //socket.on('ipaddr', function () {

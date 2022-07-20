@@ -1,4 +1,3 @@
-// On this codelab, you will be streaming only video (video: true).
 const mediaStreamConstraints = {
     video: true,
     audio: false,
@@ -145,9 +144,9 @@ socket.on('created', function (room, clientId) {
 socket.on('joined', function (room, clientId, num) {
     console.log('This peer has joined room', room,'with client ID', clientId, 'and', num, 'people');
     isGuest = true;
-    for (let i = 0; i < num - 1; i++) {
-        createPeerConnection(isGuest);
-    }
+    //for (let i = 0; i < num - 1; i++) {
+    createPeerConnection(isGuest, clientId);
+    //}
 });
 
 socket.on('full', function (room) {
@@ -156,18 +155,18 @@ socket.on('full', function (room) {
     window.location.reload();
 });
 
-socket.on('ready', function () {
+socket.on('ready', function (clientId) {
     console.log('Socket is ready');
-    createPeerConnection(isGuest);
+    createPeerConnection(isGuest, clientId);
 });
 
 socket.on('log', function (array) {
     console.log.apply(console, array);
 });
 
-socket.on('message', function (message) {
+socket.on('message', function (message, clientId) {
     console.log('Client received message:', message);
-    signalingMessageCallback(message);
+    signalingMessageCallback(message, clientId);
 });
 
 if (location.hostname.match(/localhost|127\.0\.0/)) {
@@ -182,7 +181,7 @@ socket.on('disconnect', function (reason) {
 socket.on('bye', function (room) {
     console.log(`Peer leaving room ${room}.`);
     // If peer did not create the room, re-enter to be creator.
-    if (!isGuest) {
+    if (isGuest) {
         window.location.reload();
     }
 });
@@ -195,9 +194,9 @@ window.addEventListener('unload', function () {
 /**
 * Send message to signaling server
 */
-function sendMessage(message) {
-    console.log('Client sending message: ', message);
-    socket.emit('message', room, message);
+function sendMessage(message, to) {
+    console.log('Client sending message: ', message,'to', to);
+    socket.emit('message', room, to, message);
 }
 
 /****************************************************************************
@@ -205,23 +204,29 @@ function sendMessage(message) {
 ****************************************************************************/
 
 var peerConns = new Array();
-var peerConnIdx = -1;
 var dataChannel
 
-function signalingMessageCallback(message) {
+function signalingMessageCallback(message, clientId) {
     if (message.type === 'offer') {
         console.log('Got offer. Sending answer to peer.');
-        peerConns[peerConnIdx].setRemoteDescription(new RTCSessionDescription(message), function () { },
+        peerConns[clientId].setRemoteDescription(new RTCSessionDescription(message), function () { },
             logError);
-        peerConns[peerConnIdx].createAnswer(onLocalSessionCreated, logError);
+
+        peerConns[clientId].createAnswer().then(function (answer) {
+            return peerConns[clientId].setLocalDescription(answer);
+        })
+            .then(() => {
+                sendMessage(peerConns[clientId].localDescription, clientId);
+            })
+            .catch(logError);
 
     } else if (message.type === 'answer') {
         console.log('Got answer.');
-        peerConns[peerConnIdx].setRemoteDescription(new RTCSessionDescription(message), function () { },
+        peerConns[clientId].setRemoteDescription(new RTCSessionDescription(message), function () { },
             logError);
 
     } else if (message.type === 'candidate') {
-        peerConns[peerConnIdx].addIceCandidate(new RTCIceCandidate({
+        peerConns[clientId].addIceCandidate(new RTCIceCandidate({
             candidate: message.candidate,
             sdpMLineIndex: message.label,
             sdpMid: message.id
@@ -234,26 +239,21 @@ function signalingMessageCallback(message) {
 function gotRemoteMediaStream(event) {
     let remoteVideo;
     let video_id;
-    for (let i = 0; i <= peerConnIdx; i++) {
-        video_id = 'remote' + String(i);
-        remoteVideo = document.getElementById(video_id);
-        if (!remoteVideo.srcObject) {
-            remoteVideo.srcObject = event.stream;
-        }
-    }
+    video_id = 'remote' + String(this.clientId);
+    remoteVideo = document.getElementById(video_id);
+    remoteVideo.srcObject = event.stream;
 }
 
-function createPeerConnection(isGuest) {
+function createPeerConnection(isGuest, clientId) {
     console.log('Creating Peer connection as initiator?', isGuest, 'config:',
         config);
 
     let peerConn = new RTCPeerConnection(config);
-    peerConns.push(peerConn);
-    peerConnIdx++;
+    peerConns[clientId] = peerConn;
 
     let video_container = document.getElementById('video_container');
     let video_elm = document.createElement('video');
-    let video_id = 'remote' + String(peerConnIdx);
+    let video_id = 'remote' + String(clientId);
     video_elm.setAttribute('id', video_id);
     video_elm.autoplay = true;
     video_elm.playsInline = true;
@@ -269,19 +269,19 @@ function createPeerConnection(isGuest) {
                 label: event.candidate.sdpMLineIndex,
                 id: event.candidate.sdpMid,
                 candidate: event.candidate.candidate
-            });
+            }, clientId);
         } else {
             console.log('End of candidates.');
         }
     };
 
     peerConn.addStream(localStream);
-    peerConn.addEventListener('addstream', gotRemoteMediaStream);
+    peerConn.addEventListener('addstream', { clientId: clientId, handleEvent: gotRemoteMediaStream });
 
     if (isGuest) {
-        console.log('Creating Data Channel');
-        dataChannel = peerConn.createDataChannel('emotion');
-        onDataChannelCreated(dataChannel);
+        //    console.log('Creating Data Channel');
+        //    dataChannel = peerConn.createDataChannel(randomToken);
+        //    onDataChannelCreated(dataChannel);
 
         console.log('Creating an offer');
         peerConn.createOffer().then(function (offer) {
@@ -289,25 +289,17 @@ function createPeerConnection(isGuest) {
         })
             .then(() => {
                 console.log('sending local desc:', peerConn.localDescription);
-                sendMessage(peerConn.localDescription);
+                sendMessage(peerConn.localDescription, clientId);
             })
             .catch(logError);
-
-    } else {
-        peerConn.ondatachannel = function (event) {
-            console.log('ondatachannel:', event.channel);
-            dataChannel = event.channel;
-            onDataChannelCreated(dataChannel);
-        };
     }
-}
-
-function onLocalSessionCreated(desc) {
-    console.log('local session created:', desc);
-    peerConns[peerConnIdx].setLocalDescription(desc).then(function () {
-        console.log('sending local desc:', peerConns[peerConnIdx].localDescription);
-        sendMessage(peerConns[peerConnIdx].localDescription);
-    }).catch(logError);
+    //} else {
+    //    peerConn.ondatachannel = function (event) {
+    //        console.log('ondatachannel:', event.channel);
+    //        dataChannel = event.channel;
+    //        onDataChannelCreated(dataChannel);
+    //    };
+    //}
 }
 
 function onDataChannelCreated(channel) {
@@ -348,16 +340,16 @@ function receiveDataFirefoxFactory() {
 
 function sendEmotion(emotion) {
     
-    if (!dataChannel) {
-        logError('Connection has not been initiated. ' +
-            'Get two peers in the same room first');
-        return;
-    } else if (dataChannel.readyState === 'closed') {
-        logError('Connection was lost. Peer closed the connection.');
-        return;
-    }
+    //if (!dataChannel) {
+    //    logError('Connection has not been initiated. ' +
+    //        'Get two peers in the same room first');
+    //    return;
+    //} else if (dataChannel.readyState === 'closed') {
+    //    logError('Connection was lost. Peer closed the connection.');
+    //    return;
+    //}
 
-    dataChannel.send(JSON.stringify(emotion));
+    //dataChannel.send(JSON.stringify(emotion));
 
 }
 
