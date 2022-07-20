@@ -6,3 +6,18 @@ body {
 a {
     color: #00B7FF;
 }
+
+#video_button {
+    /*background-image: url('/images/video_camera.png');*/
+    display: inline-block;
+    margin-top: 2px;
+    width: 100px;
+    height: 100px;
+}
+
+.flat_button {
+    border: 1px solid #3079ed;
+    background-color: #4d90fe;
+    width: 200px;
+    height: 200px;
+}

@@ -66,6 +66,8 @@ server.listen(app.get('port'), function () {
     debug('Express server listening on port ' + server.address().port);
 });
 
+var numClients = {};
+
 io.on("connection", function (socket) {
     console.log("io connected");
     function log() {
@@ -83,45 +85,49 @@ io.on("connection", function (socket) {
     socket.on('create or join', function (room) {
         log('Received request to create or join room ' + room);
 
-        var clientsInRoom = io.sockets.adapter.rooms[room];
-        var numClients = clientsInRoom ? Object.keys(clientsInRoom.sockets).length : 0;
+        if (numClients[room] == undefined) {
+            numClients[room] = 1;
+        } else {
+            numClients[room]++;
+        }
         log('Room ' + room + ' now has ' + numClients + ' client(s)');
 
-        if (numClients === 0) {
+        if (numClients[room] == 1) {
             socket.join(room);
             log('Client ID ' + socket.id + ' created room ' + room);
             socket.emit('created', room, socket.id);
-        } else if (numClients === 1) {
+        } else if (numClients[room] > 1) {
             log('Client ID ' + socket.id + ' joined room ' + room);
-            // io.sockets.in(room).emit('join', room);
             socket.join(room);
             socket.emit('joined', room, socket.id);
-            io.sockets.in(room).emit('ready', room);
-            socket.broadcast.emit('ready', room);
+            socket.to(room).emit('ready', room);
+            //socket.broadcast.emit('ready', room);
         } else { // max two clients
             socket.emit('full', room);
         }
     });
 
-    socket.on('ipaddr', function () {
-        var ifaces = os.networkInterfaces();
-        for (var dev in ifaces) {
-            ifaces[dev].forEach(function (details) {
-                if (details.family === 'IPv4' && details.address !== '127.0.0.1') {
-                    socket.emit('ipaddr', details.address);
-                }
-            });
-        }
-    });
+    //socket.on('ipaddr', function () {
+    //    var ifaces = os.networkInterfaces();
+    //    for (var dev in ifaces) {
+    //        ifaces[dev].forEach(function (details) {
+    //            if (details.family === 'IPv4' && details.address !== '127.0.0.1') {
+    //                socket.emit('ipaddr', details.address);
+    //            }
+    //        });
+    //    }
+    //});
 
     socket.on('disconnect', function (reason) {
         console.log(`Peer or server disconnected. Reason: ${reason}.`);
+        numClients[socket.room]--;
         socket.broadcast.emit('bye');
     });
 
     socket.on('bye', function (room) {
         console.log(`Peer said bye on room ${room}.`);
     });
+
 });
 
 

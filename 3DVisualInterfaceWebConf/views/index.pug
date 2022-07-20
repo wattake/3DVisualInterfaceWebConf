@@ -6,6 +6,10 @@ block content
   video(id='localVideo' autoplay playsinline)
   video(id='remoteVideo' autoplay playsinline)
   p
-  button(onclick='joinWebConf()') Join!
+  button(onclick='joinWebConf()') Join
+  p
+  button(onclick='onVideo()' id='video_button' class='flat_button') Video
+  p
+  button(onclick='onMike()') Mute
   p
   ul(id='emotion_list')

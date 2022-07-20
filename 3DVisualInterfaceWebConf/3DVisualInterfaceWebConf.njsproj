@@ -32,6 +32,9 @@
     <Content Include="app.js" />
     <Content Include="libman.json" />
     <None Include="Properties\PublishProfiles\3DVisualInterfaceRTC - Web Deploy.pubxml" />
+    <Content Include="public\images\microphone_mark.png" />
+    <Content Include="public\images\QR.png" />
+    <Content Include="public\images\video_camera.png" />
     <Content Include="public\javascripts\face-api.min.js" />
     <Content Include="public\javascripts\main.js">
       <SubType>Code</SubType>

@@ -4,7 +4,15 @@ const mediaStreamConstraints = {
     audio: false,
 };
 
-function showEmotion(emotion) {
+const config = {
+    iceServers: [{
+        urls: 'stun:stun.l.google.com:19302'
+    }]
+};
+
+function showEmotion(emotionJSON) {
+    emotion = JSON.parse(emotionJSON);
+
     var neutral = document.getElementById('neutral');
     neutral.innerHTML = "neutral:&#009;" + emotion.neutral;
 
@@ -38,12 +46,14 @@ async function detectEmotion() {
     }
 }
 
-// Video element where stream will be placed.
+// Video element where stream will be placed
+let localStream;
 
 // Handles success by adding the MediaStream to the video element.
 async function gotLocalMediaStream(mediaStream) {
     let localVideo = await document.getElementById('localVideo');
     localVideo.srcObject = mediaStream;
+    localStream = mediaStream;
 }
 
 // Handles error by logging a message to the console with the error message.
@@ -83,19 +93,22 @@ function addEmotionList() {
     ul.appendChild(surprised);
 }
 
+window.onload = function start() {
+    Promise.all([
+        faceapi.nets.tinyFaceDetector.loadFromUri("/weights"),
+        faceapi.nets.faceExpressionNet.loadFromUri("/weights"),
+    ]).then(navigator.mediaDevices.getUserMedia(mediaStreamConstraints)
+        .then(gotLocalMediaStream)).catch(handleLocalMediaStreamError);
+
+}
+
 function joinWebConf() {
 
-    //Promise.all([
-    //    faceapi.nets.tinyFaceDetector.loadFromUri("/weights"),
-    //    faceapi.nets.faceExpressionNet.loadFromUri("/weights"),
-    //]).then(navigator.mediaDevices.getUserMedia(mediaStreamConstraints)
-    //    .then(gotLocalMediaStream)).catch(handleLocalMediaStreamError);
+    addEmotionList();
 
-    //addEmotionList();
+    socket.emit('create or join', room);
 
- //   socket.emit('create or join', room);
-
-    //setInterval(detectEmotion, 1000);
+    setInterval(detectEmotion, 1000);
 
 }
 
@@ -106,6 +119,7 @@ function joinWebConf() {
 ****************************************************************************/
 
 window.room = prompt("Enter room name:");
+let isInitiator;
 
 // Connect to the signaling server
 var socket = io();
@@ -123,7 +137,7 @@ socket.on('created', function (room, clientId) {
 socket.on('joined', function (room, clientId) {
     console.log('This peer has joined room', room, 'with client ID', clientId);
     isInitiator = false;
-    createPeerConnection(isInitiator, configuration);
+    createPeerConnection(isInitiator);
 });
 
 socket.on('full', function (room) {
@@ -134,7 +148,7 @@ socket.on('full', function (room) {
 
 socket.on('ready', function () {
     console.log('Socket is ready');
-    createPeerConnection(isInitiator, configuration);
+    createPeerConnection(isInitiator);
 });
 
 socket.on('log', function (array) {
@@ -145,11 +159,6 @@ socket.on('message', function (message) {
     console.log('Client received message:', message);
     signalingMessageCallback(message);
 });
-
-if (room != "") {
-    // Joining a room.
-    socket.emit('create or join', room);
-}
 
 if (location.hostname.match(/localhost|127\.0\.0/)) {
     socket.emit('ipaddr');
@@ -172,6 +181,14 @@ window.addEventListener('unload', function () {
     console.log(`Unloading window. Notifying peers in ${room}.`);
     socket.emit('bye', room);
 });
+
+/**
+* Send message to signaling server
+*/
+function sendMessage(message) {
+    console.log('Client sending message: ', message);
+    socket.emit('message', message);
+}
 
 /****************************************************************************
 * WebRTC peer connection and data channel
@@ -208,7 +225,7 @@ function gotRemoteMediaStream(event) {
     remoteVideo.srcObject = event.stream;
 }
 
-function createPeerConnection(isInitiator, config) {
+function createPeerConnection(isInitiator) {
     console.log('Creating Peer connection as initiator?', isInitiator, 'config:',
         config);
     peerConn = new RTCPeerConnection(config);
@@ -228,6 +245,7 @@ function createPeerConnection(isInitiator, config) {
         }
     };
 
+    peerConn.addStream(localStream);
     peerConn.addEventListener('addstream', gotRemoteMediaStream);
 
     if (isInitiator) {
@@ -309,7 +327,7 @@ function sendEmotion(emotion) {
         return;
     }
 
-    dataChannel.send(emotion);
+    dataChannel.send(JSON.stringify(emotion));
 
 }
 
